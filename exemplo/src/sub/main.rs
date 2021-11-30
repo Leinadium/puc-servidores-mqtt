@@ -54,9 +54,6 @@ fn main() {
         process::exit(1);
     });
 
-    // Initialize the consumer before connecting.
-    let rx = cli.start_consuming();
-
     // Define the set of options for the connection.
     let lwt = mqtt::MessageBuilder::new()
         .topic("test")
