@@ -1,18 +1,41 @@
+#[doc(hidden)]
+
 use std::{
     process,
-    time::Duration
+    time::Duration,
+    sync::mpsc::Receiver
 };
+use mqtt::{Client, Message};
 
 extern crate paho_mqtt as mqtt;
 
-pub const END_BROKER:&str = "tcp://localhost:1883";
+const END_BROKER:&str = "tcp://localhost:1883";
 pub const TOPICO_REQS:&str = "inf1406-reqs";
 pub const TOPICO_MON:&str = "inf1406-mon";
+pub const TOPICO_NONE:&str = "none";
 
 pub const SERVER_NAME:&str = "inf1406-server-";
 pub const MONITOR_NAME:&str = "inf1406-monitor";
 
-pub fn conectar(nome_id: &str, topico: &str) {
+pub const QOS:i32 = 1;
+pub const HEARTBEAT_SLEEP:Duration = Duration::from_secs(5);
+pub const HEARTBEAT_TIMEOUT:Duration = Duration::from_secs(10);
+
+/// Contem o canal de chegada, e o cliente para saida
+/// é a estrutura retornada pela função ```conectar```
+pub struct Conexao {
+    pub rx: Receiver<Option<Message>>,
+    pub cli: Client
+}
+
+/// Faz uma conexão mqtt no topico passado, usando o nome_id fornecido
+///
+/// # Arguments
+/// * `nome_id` - String contendo o nome identificador dessa conexão
+/// * `topico` - str contendo o nome do tópico a ser conectado.
+///             Se topico for TOPICO_NONE, o client não estará recebendo
+///             mensagem de nenhum tópico.
+pub fn conectar(nome_id: &String, topico: &str) -> Conexao {
     // cria as opcoes
     let create_opts = mqtt::CreateOptionsBuilder::new()
         .server_uri(END_BROKER)
@@ -21,17 +44,17 @@ pub fn conectar(nome_id: &str, topico: &str) {
 
     // cria o client de conexao
     let mut cli = mqtt::Client::new(create_opts).unwrap_or_else(|err| {
-        println!("Error creating {} client conection in reqs: {:?}", nome_id, err);
+        println!("Error creating {} client conection: {:?}", nome_id, err);
         process::exit(1);
     });
 
     // inicia o consumo
-    cli.start_consuming();
+    let rx = cli.start_consuming();
 
     // define as opcoes das conexoes
     let last_will = mqtt::MessageBuilder::new()
         .topic(TOPICO_REQS)
-        .payload("{} has lost connection on reqs")
+        .payload(format!("{} has lost connection on {}", nome_id, topico))
         .finalize();
 
     let conn_opts = mqtt::ConnectOptionsBuilder::new()
@@ -46,9 +69,14 @@ pub fn conectar(nome_id: &str, topico: &str) {
         process::exit(1);
     }
 
-    // se inscrevendo em req
-    if let Err(e) = cli.subscribe(topico, 1) {  // QoS1 -> At least once
-        println!("unable to subscribe: {:?}", e);
-        process::exit(1);
+    // se inscrevendo no topico
+    if topico != TOPICO_NONE {
+        if let Err(e) = cli.subscribe(topico, 1) {  // QoS1 -> At least once
+            println!("unable to subscribe: {:?}", e);
+            process::exit(1);
+        }
     }
+
+    let ret = Conexao { rx, cli };
+    ret
 }
