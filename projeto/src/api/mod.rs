@@ -1,13 +1,15 @@
 #[doc(hidden)]
 
+extern crate paho_mqtt as mqtt;
+
 use std::{
     process,
     time::Duration,
     sync::mpsc::Receiver
 };
+
 use mqtt::{Client, Message};
 
-extern crate paho_mqtt as mqtt;
 
 const END_BROKER:&str = "tcp://localhost:1883";
 pub const TOPICO_REQS:&str = "inf1406-reqs";
@@ -22,6 +24,47 @@ pub const MONITOR_HEARTBEAT_NAME:&str = "inf1406-monitor-h";
 pub const QOS:i32 = 1;
 pub const HEARTBEAT_SLEEP:Duration = Duration::from_secs(5);
 pub const HEARTBEAT_TIMEOUT:Duration = Duration::from_secs(10);
+
+/// json para um client querendo ler algum dado
+pub struct ClientLeitura {
+    chave: String,
+    topicoresp: String,
+    idpedido: i32
+}
+
+/// json para um client querendo inserir algum dado
+pub struct ClientInsercao {
+    chave: String,
+    novovalor: String,
+    topicoresp: String,
+    idpedido: i32,
+}
+
+/// json para um monitor avisando da morte de algum servidor
+pub struct MonitorMorte {
+    idserv: String,
+    vistoem: String
+}
+
+/// json para um servidor avisando que nasceu
+pub struct ServidorNascimento {
+    topicoresp: String
+}
+
+/// json para um servidor fornecendo atualizacao para outro
+pub struct ServidorAtualizacao {
+    // TODO...
+    todo: String
+}
+
+pub enum Operacao {
+    Leitura(ClientLeitura),
+    Insercao(ClientLeitura),
+    Morte(MonitorMorte),
+    Nascimento(ServidorNascimento),
+    Atualizacao(ServidorAtualizacao),
+    Invalida,
+}
 
 /// Contem o canal de chegada, e o cliente para saida
 /// é a estrutura retornada pela função ```conectar```
