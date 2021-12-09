@@ -15,7 +15,9 @@ pub const TOPICO_MON:&str = "inf1406-mon";
 pub const TOPICO_NONE:&str = "none";
 
 pub const SERVER_NAME:&str = "inf1406-server-";
+pub const SERVER_HEARTBEAT_NAME: &str = "inf1406-server-h-";
 pub const MONITOR_NAME:&str = "inf1406-monitor";
+pub const MONITOR_HEARTBEAT_NAME:&str = "inf1406-monitor-h";
 
 pub const QOS:i32 = 1;
 pub const HEARTBEAT_SLEEP:Duration = Duration::from_secs(5);
@@ -53,8 +55,8 @@ pub fn conectar(nome_id: &String, topico: &str) -> Conexao {
 
     // define as opcoes das conexoes
     let last_will = mqtt::MessageBuilder::new()
-        .topic(TOPICO_REQS)
-        .payload(format!("{} has lost connection on {}", nome_id, topico))
+        .topic(topico)
+        .payload(format!("{} has lost connection", nome_id))
         .finalize();
 
     let conn_opts = mqtt::ConnectOptionsBuilder::new()

@@ -1,27 +1,34 @@
 use std::{
     env,
     process,
-    thread
+    thread,
 };
 
 mod api;
 
 
 extern crate paho_mqtt as mqtt;
+extern crate serde_json as json;
 
 
-fn loop_hearbeat(n_server: i32) {
-    // opções de conexão
-    let create_opts = mqtt::CreateOptionsBuilder::new()
-        .server_uri(api::TOPICO_MON)
-        .client_id(format!("{}{}", MY_NAME, n_server))
-        .finalize();
+/// Envia um heartbeat e dorme.
+/// Para ser usada em uma thread.
+fn loop_heartbeat(n_server: i32) {
 
-    // cria o client
-    let mut cli = mqtt::Client::new(create_opts).unwrap_or_else(|err| {
-        println!("Error creating heartbeat client in thread: {:?}", err);
-        process::exit(1);
-    });
+    let nome_id = format!("{}{}", api::SERVER_HEARTBEAT_NAME, n_server);
+    let topico = api::TOPICO_MON;
+
+    let conexao = api::conectar(&nome_id, topico);
+
+    let text = format!("{{idServ: {}}}", n_server);
+    loop {
+        let msg = mqtt::Message::new(topico, text.clone(), api::QOS);
+        let tok = conexao.cli.publish(msg);
+        if let Err(e) = tok {
+            println!("{}: Error sending hearbeat: {:?}", n_server, e);
+        }
+        thread::sleep(api::HEARTBEAT_SLEEP);
+    }
 }
 
 
@@ -34,15 +41,23 @@ fn main() {
         process::exit(0x01);
     }
 
-    let n_server = args.get(1)
+    let n_server: i32 = args.get(1)
+        .unwrap()
         .parse::<i32>()
         .expect("n_server is not a number");
 
-    let n_total = args.get(1)
+    let n_total: i32 = args.get(2)
+        .unwrap()
         .parse::<i32>()
         .expect("n_total is not a number");
 
+    println!("starting server #{}/{}", n_server, n_total);
 
+    // iniciando o heartbeat
+    let n_server1 = n_server.clone();
+    let handle = thread::spawn(move || {
+        loop_heartbeat(n_server1);
+    });
 
-    println!("Hello, World!");
+    handle.join().unwrap();
 }
