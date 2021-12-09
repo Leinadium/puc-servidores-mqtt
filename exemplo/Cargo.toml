@@ -12,6 +12,6 @@ paho-mqtt = { version = "0.9", default-features = false, features = ["bundled"] 
 name = "sub"
 path = "src/sub/main.rs"
 
-[[bin]]
-name = "pub"
-path = "src/pub/main.rs"
+# [[bin]]
+# name = "pub"
+# path = "src/pub/main.rs"

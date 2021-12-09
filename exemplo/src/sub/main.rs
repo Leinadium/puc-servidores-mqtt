@@ -9,7 +9,7 @@ extern crate paho_mqtt as mqtt;
 
 const DFLT_BROKER:&str = "tcp://localhost:1883";
 const DFLT_CLIENT:&str = "rust_subscribe";
-const DFLT_TOPICS:&[&str] = &["rust/mqtt", "rust/test"];
+const DFLT_TOPICS:&[&str] = &["inf1406-mon", "rust/test"];
 // The qos list that match topics above.
 const DFLT_QOS:&[i32] = &[0, 1];
 
@@ -53,6 +53,8 @@ fn main() {
         println!("Error creating the client: {:?}", err);
         process::exit(1);
     });
+
+    let rx = cli.start_consuming();
 
     // Define the set of options for the connection.
     let lwt = mqtt::MessageBuilder::new()

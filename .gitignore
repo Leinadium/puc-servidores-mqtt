@@ -12,3 +12,5 @@ Cargo.lock
 # IDE stuff
 .idea/
 
+# setup for mosquitto
+**/*.bat
