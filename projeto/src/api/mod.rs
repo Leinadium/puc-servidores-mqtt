@@ -6,7 +6,8 @@ extern crate serde_json as json;
 use std::{
     process,
     time::Duration,
-    sync::mpsc::Receiver
+    sync::mpsc::Receiver,
+    time::SystemTime
 };
 
 use mqtt::{Client, Message};
@@ -32,7 +33,8 @@ pub const HEARTBEAT_TIMEOUT:Duration = Duration::from_secs(10);
 pub struct ClientLeitura {
     pub chave: String,
     pub topicoresp: String,
-    pub idpedido: i64
+    pub idpedido: i64,
+    pub tempo: Systemtime,
 }
 
 /// json para um client querendo inserir algum dado
@@ -41,23 +43,27 @@ pub struct ClientInsercao {
     pub novovalor: String,
     pub topicoresp: String,
     pub idpedido: i64,
+    pub tempo: Systemtime,
 }
 
 /// json para um monitor avisando da morte de algum servidor
 pub struct MonitorMorte {
     pub idserv: i64,
-    pub vistoem: String
+    pub vistoem: String,
+    pub tempo: Systemtime,
 }
 
 /// json para um servidor avisando que nasceu
 pub struct ServidorNascimento {
-    pub topicoresp: String
+    pub topicoresp: String,
+    pub tempo: Systemtime,
 }
 
 /// json para um servidor fornecendo atualizacao para outro
 pub struct ServidorAtualizacao {
     // TODO...
-    pub todo: String
+    pub todo: String,
+    pub tempo: Systemtime
 }
 
 pub enum Operacao {
@@ -127,6 +133,15 @@ pub fn conectar(nome_id: &String, topico: &str) -> Conexao {
 
     let ret = Conexao { rx, cli };
     ret
+}
+
+
+pub fn enviar(conexao: &Conexao, texto: &String, topico: &str) {
+    let msg = Message::new(topico, texto.clone(), QOS);
+    let tok = conexao.cli.publish(msg);
+    if let Err(e) = tok {
+        println!("Erro sending msg in {}: {:?}", topico, e);
+    }
 }
 
 
