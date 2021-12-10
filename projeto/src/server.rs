@@ -6,11 +6,19 @@ use std::{
     process,
     thread,
     borrow::Borrow,
+    collections::HashMap,
+    time::{Duration, SystemTime}
 };
+use std::alloc::System;
 
 use json::{Value};
-use api::{ClientInsercao, ClientLeitura, MonitorMorte, Operacao, ServidorAtualizacao, ServidorNascimento};
+use mqtt::Message;
 
+use api::{
+    ClientInsercao, ClientLeitura, MonitorMorte, ServidorAtualizacao, ServidorNascimento,
+    Operacao,
+    Conexao
+};
 mod api;
 
 
@@ -35,6 +43,51 @@ fn heartbeat_loop(n_server: i32) {
 }
 
 
+/// Diz se a operação com a chave deve ser feita nesse servidor
+fn eh_comigo(n_server: &i32, n_total: &i32, chave: &String) -> bool {
+    let mut soma = 0;
+    for byte in chave.as_bytes() {
+        let mut hexs = String::new();
+        write!(&mut hexs, "{:x}", &byte).expect("unable to write");
+        let byte_int = i32::from_str_radix(hexs.as_str(), 16).expect("invalid hexstring");
+        soma += byte_int;
+    }
+    soma % n_total == n_server
+}
+
+/// Atualiza a lista, e retira as operações muito velhas
+fn atualiza(lista: &mut Vec<Operacao>, new_op: Operacao)  {
+    let mut i = -1;
+    let atual = SystemTime::now();
+
+    for (ind, op) in lista.iter().enumerate() {
+        let t = match op {
+            Operacao::Leitura(x)   |
+            Operacao::Insercao(x) |
+            Operacao::Morte(x)    |
+            Operacao::Nascimento(x)  |
+            Operacao::Atualizacao(x) => x.tempo,
+            _ => atual
+        };
+
+        if atual.duration_since(t).unwrap_or_else(api::OPERACAO_TIMEOUT)
+            < api::OPERACAO_TIMEOUT {
+            i = ind as i32;
+            break ;
+        }
+    }
+
+    // retirando
+    if i != -1 {
+        while i > 0 {
+            lista.remove(0);
+            i -= 1;
+        }
+    }
+    lista.push(new_op);
+}
+
+
 /// Trata uma mensagem recebida de um json
 /// retorna o que deve ser feito.
 fn trata(v: Value) -> Operacao {
@@ -50,22 +103,27 @@ fn trata(v: Value) -> Operacao {
             chave: api::extrair_string(&v, "chave"),
             topicoresp: api::extrair_string(&v, "topico-resp"),
             idpedido: api::extrair_int(&v, "idpedido"),
+            tempo: SystemTime::now(),
         }),
         "insercao" => Operacao::Insercao(ClientInsercao {
             chave: api::extrair_string(&v, "chave"),
             novovalor: api::extrair_string(&v, "novovalor"),
             topicoresp: api::extrair_string(&v, "topico-resp"),
             idpedido: api::extrair_int(&v, "idpedido"),
+            tempo: SystemTime::now(),
         }),
         "morte" => Operacao::Morte(MonitorMorte {
             idserv: api::extrair_int(&v, "idserv"),
-            vistoem: api::extrair_string(&v, "vistoem")
+            vistoem: api::extrair_string(&v, "vistoem"),
+            tempo: SystemTime::now(),
         }),
         "nascimento" => Operacao::Nascimento(ServidorNascimento {
-            topicoresp: api::extrair_string(&v, "topico-resp")
+            topicoresp: api::extrair_string(&v, "topico-resp"),
+            tempo: SystemTime::now(),
         }),
         "atualizacao" => Operacao::Atualizacao(ServidorAtualizacao {
-            todo: "TODO".to_string()
+            todo: "TODO".to_string(),
+            tempo: SystemTime::now(),
         }),
         _ => Operacao::Invalida
     }
@@ -74,27 +132,68 @@ fn trata(v: Value) -> Operacao {
 /// Loop de execucao principal do programa.
 /// Não precisa ser executado em uma thread.
 fn main_loop(n_server: &i32, _n_total: &i32) {
+    // SETUP
     let nome_id = format!("{}{}", api::SERVER_NAME, n_server);
     let topico = api::TOPICO_REQS;
     let conexao = api::conectar(&nome_id, topico);
+    let mut hashmap: HashMap<String, String> = HashMap::new();
+    let mut lista_log: Vec<Operacao> = Vec::new();
 
+    // LOOP
     // como o servidor só envia msgs de acordo com o que recebe
     // entao o loop principal é em função do que recebe
     for msg in conexao.rx.iter() {
+        let mut op: Operacao;
+
+        // convertendo para json
         if let Some(msg) = msg {
-            // convertendo para json
             let texto = msg.payload_str().borrow();
             if let Some(v) = json::from_str(texto) {
-                trata(v);
+                op = trata(v);
+            } else {
+                op = Operacao::Invalida;
             }
+        } else {
+            op = Operacao::Invalida;
         }
+
+        // TODO: tratando todas operações
+        match &op {
+            // TRATANDO UMA INSERCAO
+            Operacao::Insercao(ci) => {
+                if eh_comigo(n_server, n_total, &ci.chave) {
+                    hashmap.insert(ci.chave.clone(), ci.novovalor.clone());
+                }
+            },
+            // TRATANDO UMA LEITURA
+            Operacao::Leitura(cl) => {
+                if eh_comigo(n_server, n_total, &ci.chave) {
+                    let content = hashmap.get(&cl.chave)
+                                                .unwrap_or_else("nao existe");
+                    api::enviar(&conexao, content, &cl.topicoresp.to_string());
+                }
+            },
+            // TRATANDO UM SERVIDOR MORRENDO
+            Operacao::Morte(_mm) => {
+                // TODO
+            },
+            Operacao::Nascimento(_sn) => {
+                // TODO
+            },
+            // TRATANDO UM UPDATE
+            Operacao::Atualizacao(_sa) => {
+                // TODO
+            }
+            _ => {}     // operacao invalida
+        }
+        // colocando na lista
+        atualiza(&mut lista_log, op);
     }
 
 }
 
 
 fn main() {
-
     let args: Vec<String> = env::args().collect();
     if args.len() != 3 {
         println!("Invalid arguments!");

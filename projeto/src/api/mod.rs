@@ -28,6 +28,7 @@ pub const MONITOR_HEARTBEAT_NAME:&str = "inf1406-monitor-h";
 pub const QOS:i32 = 1;
 pub const HEARTBEAT_SLEEP:Duration = Duration::from_secs(5);
 pub const HEARTBEAT_TIMEOUT:Duration = Duration::from_secs(10);
+pub const OPERACAO_TIMEOUT:Duration = Duration::from_secs(100);
 
 /// json para um client querendo ler algum dado
 pub struct ClientLeitura {
