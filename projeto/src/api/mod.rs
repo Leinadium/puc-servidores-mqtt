@@ -34,27 +34,27 @@ pub struct ClientLeitura {
 
 /// json para um client querendo inserir algum dado
 pub struct ClientInsercao {
-    chave: String,
-    novovalor: String,
-    topicoresp: String,
-    idpedido: i32,
+    pub chave: String,
+    pub novovalor: String,
+    pub topicoresp: String,
+    pub idpedido: i32,
 }
 
 /// json para um monitor avisando da morte de algum servidor
 pub struct MonitorMorte {
-    idserv: String,
-    vistoem: String
+    pub idserv: String,
+    pub vistoem: String
 }
 
 /// json para um servidor avisando que nasceu
 pub struct ServidorNascimento {
-    topicoresp: String
+    pub topicoresp: String
 }
 
 /// json para um servidor fornecendo atualizacao para outro
 pub struct ServidorAtualizacao {
     // TODO...
-    todo: String
+    pub todo: String
 }
 
 pub enum Operacao {
