@@ -9,7 +9,7 @@ use std::{
 };
 
 use json::{Value};
-use api::{Operacao};
+use api::{ClientInsercao, ClientLeitura, MonitorMorte, Operacao, ServidorAtualizacao, ServidorNascimento};
 
 mod api;
 
@@ -46,15 +46,29 @@ fn trata(v: Value) -> Operacao {
 
     // TODO
     match tipomsg.as_str() {
-        "leitura" => {},
-        "insercao" => {},
-        "morte" => {},
-        "nascimento" => {},
-        "atualizacao" => {},
-        _ => {}
+        "leitura" => Operacao::Leitura(ClientLeitura {
+            chave: api::extrair_string(&v, "chave"),
+            topicoresp: api::extrair_string(&v, "topico-resp"),
+            idpedido: api::extrair_int(&v, "idpedido"),
+        }),
+        "insercao" => Operacao::Insercao(ClientInsercao {
+            chave: api::extrair_string(&v, "chave"),
+            novovalor: api::extrair_string(&v, "novovalor"),
+            topicoresp: api::extrair_string(&v, "topico-resp"),
+            idpedido: api::extrair_int(&v, "idpedido"),
+        }),
+        "morte" => Operacao::Morte(MonitorMorte {
+            idserv: api::extrair_int(&v, "idserv"),
+            vistoem: api::extrair_string(&v, "vistoem")
+        }),
+        "nascimento" => Operacao::Nascimento(ServidorNascimento {
+            topicoresp: api::extrair_string(&v, "topico-resp")
+        }),
+        "atualizacao" => Operacao::Atualizacao(ServidorAtualizacao {
+            todo: "TODO".to_string()
+        }),
+        _ => Operacao::Invalida
     }
-
-    Operacao::Invalida
 }
 
 /// Loop de execucao principal do programa.
