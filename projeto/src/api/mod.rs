@@ -1,6 +1,7 @@
 #[doc(hidden)]
 
 extern crate paho_mqtt as mqtt;
+extern crate serde_json as json;
 
 use std::{
     process,
@@ -9,6 +10,8 @@ use std::{
 };
 
 use mqtt::{Client, Message};
+
+use json::{Value};
 
 
 const END_BROKER:&str = "tcp://localhost:1883";
@@ -27,9 +30,9 @@ pub const HEARTBEAT_TIMEOUT:Duration = Duration::from_secs(10);
 
 /// json para um client querendo ler algum dado
 pub struct ClientLeitura {
-    chave: String,
-    topicoresp: String,
-    idpedido: i32
+    pub chave: String,
+    pub topicoresp: String,
+    pub idpedido: i64
 }
 
 /// json para um client querendo inserir algum dado
@@ -37,12 +40,12 @@ pub struct ClientInsercao {
     pub chave: String,
     pub novovalor: String,
     pub topicoresp: String,
-    pub idpedido: i32,
+    pub idpedido: i64,
 }
 
 /// json para um monitor avisando da morte de algum servidor
 pub struct MonitorMorte {
-    pub idserv: String,
+    pub idserv: i64,
     pub vistoem: String
 }
 
@@ -59,7 +62,7 @@ pub struct ServidorAtualizacao {
 
 pub enum Operacao {
     Leitura(ClientLeitura),
-    Insercao(ClientLeitura),
+    Insercao(ClientInsercao),
     Morte(MonitorMorte),
     Nascimento(ServidorNascimento),
     Atualizacao(ServidorAtualizacao),
@@ -124,4 +127,33 @@ pub fn conectar(nome_id: &String, topico: &str) -> Conexao {
 
     let ret = Conexao { rx, cli };
     ret
+}
+
+
+/// Extrai a string da chave do dicionario
+/// Retorna "" se não existir aquela chave, ou não for string
+///
+/// # Exemplo:
+///     v -> { "bom": "dia" }
+///     extrair_string(v, [&str] "bom") -> [String] "dia"
+///     extrair_string(v, [&str] "xxx") -> [String] ""
+pub fn extrair_string(v: &Value, key: &str) -> String {
+    match &v[key] {
+        Value::String(s) => s.clone(),
+        _ => "".to_string()
+    }
+}
+
+/// Extrai um i64 da chave do dicionario
+/// Retorna -1 se não existir aquela chave, ou não for i64
+///
+/// # Exemplo:
+///     v -> { "meuid": 123 }
+///     extrair_string(v, [&str] "meuid") -> [i64] 123
+///     extrair_string(v, [&str] "xxx") -> [i64] -1
+pub fn extrair_int(v: &Value, key: &str) -> i64 {
+    match &v[key] {
+        Value::Number(n) => n.clone().as_i64().unwrap_or_else(-1),
+        _ => -1
+    }
 }
