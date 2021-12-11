@@ -116,7 +116,7 @@ pub fn conectar(nome_id: &String, topico: &str) -> Conexao {
 
     let conn_opts = mqtt::ConnectOptionsBuilder::new()
         .keep_alive_interval(Duration::from_secs(20))
-        .clean_session(false)
+        .clean_session(true)
         .will_message(last_will)
         .finalize();
 
@@ -134,13 +134,18 @@ pub fn conectar(nome_id: &String, topico: &str) -> Conexao {
         }
     }
 
+    if !cli.is_connected() {
+        println!("erro connecting to mqtt?");
+        process::exit(1);
+    }
+
     let ret = Conexao { rx, cli };
     ret
 }
 
 /// Adiciona um topico para aquela conexao
 pub fn adicionar_topico(conexao: &Conexao, topico: &str) {
-    if let Err(e) = conexao.cli.subscribe(topico, 1) {  // QoS1 -> At least once
+    if let Err(e) = conexao.cli.subscribe(topico, QOS) {  // QoS1 -> At least once
         println!("unable to subscribe: {:?}", e);
         process::exit(1);
     }
@@ -184,7 +189,7 @@ pub fn extrair_string(v: &Value, key: &str) -> String {
 ///     extrair_string(v, [&str] "xxx") -> [i64] -1
 pub fn extrair_int(v: &Value, key: &str) -> i64 {
     match &v[key] {
-        Value::Number(n) => n.clone().as_i64().unwrap_or_else(-1),
+        Value::Number(n) => n.clone().as_i64().unwrap_or_else(|| -1),
         _ => -1
     }
 }
@@ -202,7 +207,7 @@ pub fn extrair_tempo(v: &Value, key: &str) -> Duration {
         Value::String(s) => {
             let x = s.clone()
                 .parse::<u64>()
-                .unwrap_or_else(0);
+                .unwrap_or_else(|_| 0);
             Duration::from_millis(x)
         },
         _ => Duration::from_millis(0)

@@ -14,3 +14,7 @@ Cargo.lock
 
 # setup for mosquitto
 **/*.bat
+
+# for python
+**/*.pyc
+**/venv/
