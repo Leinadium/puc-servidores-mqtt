@@ -194,7 +194,7 @@ pub fn extrair_int(v: &Value, key: &str) -> i64 {
 /// ou não for uma string.
 ///
 /// # Exemplo:
-///     v -> { "tempo": 8828397.13 }
+///     v -> { "tempo": "8828397.13" }
 ///     extrair_tempo(v, [&str] "tempo" ) -> [Duration] 8828397.13
 ///     extrair_tempo(v, [&str] "eee" ) -> [Duration] UNIX_EPOCH
 pub fn extrair_tempo(v: &Value, key: &str) -> Duration {
@@ -204,9 +204,29 @@ pub fn extrair_tempo(v: &Value, key: &str) -> Duration {
                 .parse::<u64>()
                 .unwrap_or_else(0);
             Duration::from_millis(x)
-        }
+        },
         _ => Duration::from_millis(0)
     }
+}
+
+/// Extrai um hashmap do value
+/// Retorna uma hashmap vazio se nao for um hashmap
+pub fn extrair_hashmap(value: &Value, key: &str) -> HashMap<String, String> {
+    let mut h : HashMap<String, String> = HashMap::new();
+    match &value[key] {
+        Value::Object(map) => {
+            for (key_map, value_map) in map {
+                match value_map {
+                    Value::String(value_str) => {
+                        h.insert(key_map.clone(), value_str.clone());
+                    },
+                    _ => {}
+                }
+            }
+        },
+        _ => {}
+    }
+    h
 }
 
 

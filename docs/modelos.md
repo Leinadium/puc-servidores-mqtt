@@ -25,7 +25,7 @@
 {
   "tipomsg": "falhaserv",
   "idserv": 1234,
-  "vistoem": "hora-formato-a-definir"
+  "vistoem": "12345.78"
 }
 ```
 
@@ -40,4 +40,12 @@
 
 ## ServidorAtualizacao:
 É enviado por outro topico
-*TODO*
+```json
+{
+  "tipomsg": "atualizacao",
+  "conteudo": {
+    "chave1": "valor1",
+    "chave2": "valor2"
+  }
+}
+```
