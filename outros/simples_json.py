@@ -22,7 +22,7 @@ c.connect('localhost', 1883, 60)
 mensagens = {
     "i": dumps({
         "tipomsg": "insercao",
-        "chave": 123,
+        "chave": "123",
         "novovalor": "bom dia",
         "topico-resp": "inf1406-resposta-teste",
         "idpedido": 1234
@@ -30,7 +30,7 @@ mensagens = {
 
     "l": dumps({
         "tipomsg": "leitura",
-        "chave": 123,
+        "chave": "123",
         "topico-resp": "inf1406-resposta-teste",
         "idpedido": 12345
     }),

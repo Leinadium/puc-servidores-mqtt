@@ -136,7 +136,7 @@ fn parse(v: Value) -> Operacao {
 
 /// Envia a mensagem de nascimento
 fn bom_dia(conexao: &Conexao, meuid: &i64, topico_resp: &str) {
-    let msg = format!(r#"{{"tipomsg": "novoserv", "idserv": {}, "topicoresp": "{}"}}"#,
+    let msg = format!(r#"{{"tipomsg": "novoserv", "idserv": {}, "topico-resp": "{}"}}"#,
                       meuid, topico_resp);
     api::enviar(conexao, &msg, api::TOPICO_REQS);
 }
@@ -240,7 +240,7 @@ fn main_loop(n_server: &i64, n_total: &i64, has_birth: bool) {
         match &op {
             // TRATANDO UMA INSERCAO
             Operacao::Insercao(ci) => {
-                println!("  tipo: insercao");
+                println!("  tipo: insercao (chave: {})", ci.chave);
                 hashmap.insert(ci.chave.clone(), ci.novovalor.clone());
             },
             // TRATANDO UMA LEITURA
