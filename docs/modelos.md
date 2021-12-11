@@ -33,10 +33,11 @@
 ```json
 {
   "tipomsg": "novoserv",
+  "idserv": 1234,
   "topicoresp": "inf1406-xxx"
 }
 ```
 
 ## ServidorAtualizacao:
-
+É enviado por outro topico
 *TODO*

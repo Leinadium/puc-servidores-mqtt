@@ -7,7 +7,8 @@ use std::{
     process,
     time::Duration,
     sync::mpsc::Receiver,
-    time::SystemTime
+    time::{SystemTime, UNIX_EPOCH},
+    collections::HashMap,
 };
 
 use mqtt::{Client, Message};
@@ -18,6 +19,7 @@ use json::{Value};
 const END_BROKER:&str = "tcp://localhost:1883";
 pub const TOPICO_REQS:&str = "inf1406-reqs";
 pub const TOPICO_MON:&str = "inf1406-mon";
+pub const TOPICO_REC:&str = "inf1406-rec-";
 pub const TOPICO_NONE:&str = "none";
 
 pub const SERVER_NAME:&str = "inf1406-server-";
@@ -35,7 +37,7 @@ pub struct ClientLeitura {
     pub chave: String,
     pub topicoresp: String,
     pub idpedido: i64,
-    pub tempo: Systemtime,
+    pub tempo: Duration,
 }
 
 /// json para um client querendo inserir algum dado
@@ -44,27 +46,27 @@ pub struct ClientInsercao {
     pub novovalor: String,
     pub topicoresp: String,
     pub idpedido: i64,
-    pub tempo: Systemtime,
+    pub tempo: Duration,
 }
 
 /// json para um monitor avisando da morte de algum servidor
 pub struct MonitorMorte {
     pub idserv: i64,
-    pub vistoem: String,
-    pub tempo: Systemtime,
+    pub vistoem: Duration,
+    pub tempo: Duration,
 }
 
 /// json para um servidor avisando que nasceu
 pub struct ServidorNascimento {
+    pub idserv: i64,
     pub topicoresp: String,
-    pub tempo: Systemtime,
+    pub tempo: Duration,
 }
 
 /// json para um servidor fornecendo atualizacao para outro
 pub struct ServidorAtualizacao {
-    // TODO...
-    pub todo: String,
-    pub tempo: Systemtime
+    pub hashmap: HashMap<String, String>,
+    pub tempo: Duration
 }
 
 pub enum Operacao {
@@ -136,6 +138,19 @@ pub fn conectar(nome_id: &String, topico: &str) -> Conexao {
     ret
 }
 
+/// Adiciona um topico para aquela conexao
+pub fn adicionar_topico(conexao: &Conexao, topico: &str) {
+    if let Err(e) = conexao.cli.subscribe(topico, 1) {  // QoS1 -> At least once
+        println!("unable to subscribe: {:?}", e);
+        process::exit(1);
+    }
+}
+
+/// Remove um topico para aquela conexao
+pub fn remover_topico(conexao: &Conexao, topico: &str) {
+    conexao.cli.unsubscribe(topico).expect("Unable to unsubscribe")
+}
+
 
 pub fn enviar(conexao: &Conexao, texto: &String, topico: &str) {
     let msg = Message::new(topico, texto.clone(), QOS);
@@ -172,4 +187,33 @@ pub fn extrair_int(v: &Value, key: &str) -> i64 {
         Value::Number(n) => n.clone().as_i64().unwrap_or_else(-1),
         _ => -1
     }
+}
+
+/// Extrai um Duration da chave do dicionario
+/// Retorna UNIX_EPOCH se não existir aquela chave,
+/// ou não for uma string.
+///
+/// # Exemplo:
+///     v -> { "tempo": 8828397.13 }
+///     extrair_tempo(v, [&str] "tempo" ) -> [Duration] 8828397.13
+///     extrair_tempo(v, [&str] "eee" ) -> [Duration] UNIX_EPOCH
+pub fn extrair_tempo(v: &Value, key: &str) -> Duration {
+    match &v[key] {
+        Value::String(s) => {
+            let x = s.clone()
+                .parse::<u64>()
+                .unwrap_or_else(0);
+            Duration::from_millis(x)
+        }
+        _ => Duration::from_millis(0)
+    }
+}
+
+
+/// Pega a hora atual, e converte em Duration
+/// é uma duração desde UNIX_EPOCH.
+pub fn get_now_as_duration() -> Duration {
+    SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .expect("time went backwards?")
 }
