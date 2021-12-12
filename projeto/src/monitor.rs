@@ -30,7 +30,15 @@ fn check_heartbeat(conexao: &Conexao, hashmap: &mut HashMap<i64, Duration>, now:
     // converte a msg para json
     if let Some(message) = message {
         let cow = message.payload_str();
-        let texto = cow.borrow();
+        let texto: &str = cow.borrow();
+
+        // para controle
+        println!("recebi: {}", texto);
+        if texto.starts_with("assassinato") {
+            conexao.cli.disconnect(None).unwrap();
+            process::exit(0);
+        }
+
         if let Ok(v) = json::from_str(texto) {
             // insere/atualiza o "último momento visto" do server no hashmap
             let id_serv = api::extrair_int(&v, "idServ");

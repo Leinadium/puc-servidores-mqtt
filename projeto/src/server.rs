@@ -294,7 +294,7 @@ fn main_loop(n_server: &i64, n_total: &i64, has_birth: bool) {
             // (PARA CONTROLE) TRATANDO A MINHA MORTE
             Operacao::Assassinato(ca) => {
                 println!("  tipo: assassinato");
-                if ca.idserv == *n_server {
+                if ca.idserv == *n_server || ca.idserv == -1 {
                     println!("  chegou a minha hora. Fechando");
                     conexao.cli.disconnect(None).expect("error disconnecting");
                     process::exit(0);
