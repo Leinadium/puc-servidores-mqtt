@@ -43,7 +43,7 @@ fn check_heartbeat(conexao: &Conexao, hashmap: &mut HashMap<i64, Duration>, now:
     }
 }
 
-fn verify_crashed_servers(hashmap: &mut HashMap<i64, Duration>) {
+fn verify_crashed_servers(hashmap: &mut HashMap<i64, Duration>, now: Duration) {
     // verifica falhas no heartbeat e envia mensagem para o tópico reqs caso haja
     for (id_serv, &vistoem) in hashmap.iter() {
         // verifica se ultrapassou o tempo de timeout
@@ -78,7 +78,7 @@ fn monitor_loop() {
     loop {
         let now = api::get_now_as_duration();
         check_heartbeat(&conexao, &mut hashmap, now);
-        verify_crashed_servers(&mut hashmap);
+        verify_crashed_servers(&mut hashmap, now);
         sleep(Duration::from_millis(1));
     }
 }
