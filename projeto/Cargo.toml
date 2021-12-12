@@ -14,10 +14,10 @@ serde_json = "1.0"
 name = "server"
 path = "src/server.rs"
 
-# [[bin]]
-# name = "client"
-# path = "src/client/server"
+[[bin]]
+name = "client"
+path = "src/client.rs"
 
- [[bin]]
- name = "monitor"
- path = "src/monitor.rs"
+[[bin]]
+name = "monitor"
+path = "src/monitor.rs"
