@@ -18,6 +18,6 @@ path = "src/server.rs"
 # name = "client"
 # path = "src/client/server"
 
-# [[bin]]
-# name = "monitor"
-# path = "src/monitor/server"
+ [[bin]]
+ name = "monitor"
+ path = "src/monitor.rs"
