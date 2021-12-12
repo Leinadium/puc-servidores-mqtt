@@ -52,6 +52,8 @@ O client é um servidor simples, que envia uma mensagem para os servidores.
 
 * [Mosquitto](https://mosquitto.org/download/)
 
+* [Python 3](https://www.python.org/) para os testes
+
 # Execução
 
 Todos os comandos abaixo são para windows.
