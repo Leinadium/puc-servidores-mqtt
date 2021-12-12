@@ -18,3 +18,7 @@ Cargo.lock
 # for python
 **/*.pyc
 **/venv/
+
+# logs
+projeto/log/*
+!projeto/log/.gitkeep
