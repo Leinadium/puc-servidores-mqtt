@@ -8,8 +8,7 @@ def create_start_servers(n_servers: int):
     for id_server in range(n_servers):
         with open("log/server_" + str(id_server) + ".txt", "wb") as output:
             subprocess.Popen([
-                server_path, str(id_server), str(n_servers),
-                #"> server_" + str(id_server) + ".txt"
+                server_path, str(id_server), str(n_servers)
             ], stdout=output, stderr=output)
 
 
@@ -17,8 +16,7 @@ def create_server_revive(n_servers: int, id_server: int):
     # revive um server que crashou
     with open("log/server_" + str(id_server) + ".txt", "ab") as output:
         subprocess.Popen([
-            server_path, str(id_server), str(n_servers), "-b",
-            #"> server_" + str(id_server) + ".txt"
+            server_path, str(id_server), str(n_servers), "-b"
         ], stdout=output)
 
 
@@ -26,8 +24,7 @@ def create_monitor():
     # inicializa o monitor
     with open("log/monitor.txt", "wb") as output:
         subprocess.Popen([
-            monitor_path,
-            #"> monitor.txt"
+            monitor_path
         ], stdout=output)
 
 
@@ -35,8 +32,7 @@ def create_client_insere(id_cliente: int, chave: str, valor: str):
     # cria um cliente de inserção
     with open("log/client_" + str(id_cliente) + ".txt", "wb") as output:
         subprocess.Popen([
-            client_path, str(id_cliente), "insere", chave, valor,
-            #"> cliente_" + str(id_cliente) + ".txt"
+            client_path, str(id_cliente), "insere", chave, valor
         ], stdout=output)
 
 
@@ -44,8 +40,7 @@ def create_client_consulta(id_cliente: int, chave: str):
     # cria um cliente de consulta
     with open("log/client_" + str(id_cliente) + ".txt", "wb") as output:
         subprocess.Popen([
-            client_path, str(id_cliente), "consulta", chave,
-            #"> cliente_" + str(id_cliente) + ".txt"
+            client_path, str(id_cliente), "consulta", chave
         ], stdout=output)
 
 
@@ -53,8 +48,7 @@ def create_client_derruba(id_cliente: int, id_server: str):
     # cria um cliente que derruba um servidor
     with open("log/client_" + str(id_cliente) + ".txt", "wb") as output:
         subprocess.Popen([
-            client_path, str(id_cliente), "derrubar", id_server,
-            #"> cliente_" + str(id_cliente) + ".txt"
+            client_path, str(id_cliente), "derrubar", str(id_server)
         ], stdout=output)
 
 
@@ -110,14 +104,14 @@ def test3():
     sleep(1)
 
     # testa
-    create_client_consulta(0, "teste10")
-    create_client_consulta(1, "teste")
-    create_client_insere(2, "teste", "teste")
-    create_client_insere(3, "teste", "teste")
-    create_client_consulta(4, "teste")
-    create_client_insere(5, "teste", "teste")
-    create_client_consulta(6, "teste")
-    create_client_insere(7, "teste", "teste")
+    create_client_consulta(0, "teste1")
+    create_client_consulta(1, "teste2")
+    create_client_insere(2, "teste2", "abcd2")
+    create_client_insere(3, "teste3", "bcad3")
+    create_client_consulta(4, "teste3")
+    create_client_insere(5, "teste2", "teste2")
+    create_client_consulta(6, "teste2")
+    create_client_insere(7, "teste1", "testea1")
     sleep(5)
 
     # termina
@@ -157,11 +151,11 @@ def test5():
     # insere, derruba, consulta e revive em ordem
     create_client_insere(0, "teste2", "abc")
     sleep(2)
-    create_client_derruba(2, 2)
+    create_client_derruba(2, 1)
     sleep(11)
     create_client_consulta(1, "teste2")
     sleep(2)
-    create_server_revive(2, 2)
+    create_server_revive(2, 1)
     sleep(5)
 
     # termina
@@ -170,7 +164,7 @@ def test5():
 
 def test6():
     # inicializa infraestrutura
-    create_start_servers(8)
+    create_start_servers(2)
     sleep(2)
     create_monitor()
     sleep(1)
@@ -179,11 +173,11 @@ def test6():
     # consulta, derruba, insere e revive em ordem
     create_client_consulta(1, "teste2")
     sleep(2)    
-    create_client_derruba(2, 2)
+    create_client_derruba(2, 1)
     sleep(11)
     create_client_insere(0, "teste2", "abc")
     sleep(2)
-    create_server_revive(2, 2)
+    create_server_revive(2, 1)
     sleep(5)
 
     # termina
@@ -198,14 +192,23 @@ def test7():
     sleep(1)
 
     # testa
-    # create_client_insere(0, "teste2", "abc")
-    # sleep(1)
-    # create_client_consulta(1, "teste2")
-    # sleep(1)
-    # create_client_derruba(2, 2)
-    # sleep(1)
-    # create_server_revive(2, 2)
-    # sleep(1)
+    create_client_consulta(0, "teste1")
+    create_client_consulta(1, "teste2")
+    create_client_derruba(8, 1)
+    create_client_insere(2, "teste2", "abcd2")
+    create_client_insere(3, "teste3", "bcad3")
+    sleep(8)
+    create_server_revive(8, 1)
+    sleep(2)
+    create_client_derruba(9, 0)
+    create_client_derruba(10, 2)
+    create_client_derruba(11, 4)
+    sleep(8)
+    create_client_consulta(4, "teste3")
+    create_client_insere(5, "teste2", "teste2")
+    create_client_consulta(6, "teste2")
+    create_client_insere(7, "teste1", "testea1")
+    sleep(5)
 
     # termina
     create_client_derruba_todos(2)
@@ -237,11 +240,11 @@ def select_test():
         test_case = input("Escolha um caso de teste:\n")
         try:
             test_case = int(test_case)
-            if not (test_case > 0 and test_case <= 6):
+            if not (test_case > 0 and test_case <= 7):
                 raise
             return test_case
         except:
-            print("Caso de teste inválido. Por favor, escolha um caso de teste entre 1 e 6.\n\n")
+            print("Caso de teste inválido. Por favor, escolha um caso de teste entre 1 e 7.\n\n")
 
 
 def main():    
@@ -257,13 +260,13 @@ def main():
 
     # RUN TEST
     switch = {
-        "1": test1,
-        "2": test2,
-        "3": test3,
-        "4": test4,
-        "5": test5,
-        "6": test6,
-        "7": test7
+        1: test1,
+        2: test2,
+        3: test3,
+        4: test4,
+        5: test5,
+        6: test6,
+        7: test7,
     }
 
     case = switch.get(test_case, test1)
