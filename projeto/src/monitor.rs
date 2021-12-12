@@ -41,24 +41,27 @@ fn check_heartbeat(conexao: &Conexao, hashmap: &mut HashMap<i64, Duration>, now:
     }
 }
 
-fn verify_crashed_servers(hashmap: &mut HashMap<i64, Duration>, nome_id: &String, now: Duration) {
+fn verify_crashed_servers(hashmap: &mut HashMap<i64, Duration>, conexao: &Conexao, now: Duration) {
     // verifica falhas no heartbeat e envia mensagem para o tópico reqs caso haja
     for (id_serv, &vistoem) in hashmap.clone().iter() {
         // verifica se ultrapassou o tempo de timeout
         if now - vistoem > api::HEARTBEAT_TIMEOUT {
             // setup para enviar a msg
             let fail_hb_topico = api::TOPICO_REQS;
-            let fail_hb_conexao = api::conectar(&nome_id, fail_hb_topico);
+            // let fail_hb_conexao = api::conectar(&nome_id, fail_hb_topico);
             let fail_hb_text = format!(r#"{{"tipomsg": "falhaserv", "idserv": {}, "vistoem": {}}}"#, id_serv, vistoem.as_millis() as u64);
-            let msg = mqtt::Message::new(fail_hb_topico, fail_hb_text.clone(), api::QOS);
 
+            api::enviar(&conexao, &fail_hb_text, fail_hb_topico);
+            hashmap.remove(id_serv);
+
+            // let msg = mqtt::Message::new(fail_hb_topico, fail_hb_text.clone(), api::QOS);
             // envio da msg
-            let tok = fail_hb_conexao.cli.publish(msg);
-            if let Err(e) = tok {
-                println!("Monitor: Error sending server {} crash message: {:?}", id_serv, e);
-            } else {
-                hashmap.remove(id_serv);
-            }
+            // let tok = fail_hb_conexao.cli.publish(msg);
+            // if let Err(e) = tok {
+            //    println!("Monitor: Error sending server {} crash message: {:?}", id_serv, e);
+            // } else {
+            //     hashmap.remove(id_serv);
+            // }
         }
     }
 }
@@ -76,7 +79,7 @@ fn monitor_loop() {
     loop {
         let now = api::get_now_as_duration();
         check_heartbeat(&conexao, &mut hashmap, now);
-        verify_crashed_servers(&mut hashmap, &nome_id, now);
+        verify_crashed_servers(&mut hashmap, &conexao, now);
         sleep(Duration::from_millis(1));
     }
 }
