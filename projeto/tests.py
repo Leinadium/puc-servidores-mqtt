@@ -60,7 +60,7 @@ def create_client_derruba(id_cliente: int, id_server: str):
 
 def create_client_derruba_todos(id_cliente):
     # cria um cliente para terminar todos os servidores e o monitor
-    with open("log/client_derruta_todos" + str(id_cliente) + ".txt", "wb") as output:
+    with open("log/client_derruta_todos.txt", "wb") as output:
         subprocess.Popen([
             client_path, str(id_cliente), "derrubar"
         ], stdout=output)
@@ -74,10 +74,11 @@ def test1():
     sleep(1)
 
     # testa
+    # insere e consulta em ordem
     create_client_insere(0, "teste", "teste")
-    sleep(1)
+    sleep(2)
     create_client_consulta(1, "teste")
-    sleep(1)
+    sleep(5)
 
     # termina
     create_client_derruba_todos(2)
@@ -91,10 +92,11 @@ def test2():
     sleep(1)
 
     # testa
+    # consulta e insere em ordem
     create_client_consulta(1, "teste")
-    sleep(1)
+    sleep(2)
     create_client_insere(0, "teste", "teste")
-    sleep(1)
+    sleep(5)
 
     # termina
     create_client_derruba_todos(2)
@@ -108,10 +110,15 @@ def test3():
     sleep(1)
 
     # testa
-    # for i in range()
-    # create_client_insere(0, "teste", "teste")
-    # sleep(1)
-    # create_client_consulta(1, "teste")
+    create_client_consulta(0, "teste10")
+    create_client_consulta(1, "teste")
+    create_client_insere(2, "teste", "teste")
+    create_client_insere(3, "teste", "teste")
+    create_client_consulta(4, "teste")
+    create_client_insere(5, "teste", "teste")
+    create_client_consulta(6, "teste")
+    create_client_insere(7, "teste", "teste")
+    sleep(5)
 
     # termina
     create_client_derruba_todos(2)
@@ -127,13 +134,13 @@ def test4():
     # testa
     # insere, consulta, derruba e revive em ordem
     create_client_insere(0, "teste2", "abc")
-    sleep(1)
+    sleep(2)
     create_client_consulta(1, "teste2")
-    sleep(1)
-    create_client_derruba(2, 2)
-    sleep(1)
-    create_server_revive(2, 2)
-    sleep(1)
+    sleep(2)
+    create_client_derruba(2, 1)
+    sleep(11)
+    create_server_revive(2, 1)
+    sleep(5)
 
     # termina
     create_client_derruba_todos(2)
@@ -149,13 +156,13 @@ def test5():
     # testa
     # insere, derruba, consulta e revive em ordem
     create_client_insere(0, "teste2", "abc")
-    sleep(1)
+    sleep(2)
     create_client_derruba(2, 2)
-    sleep(1)
+    sleep(11)
     create_client_consulta(1, "teste2")
-    sleep(1)
+    sleep(2)
     create_server_revive(2, 2)
-    sleep(1)
+    sleep(5)
 
     # termina
     create_client_derruba_todos(2)
@@ -171,13 +178,13 @@ def test6():
     # testa
     # consulta, derruba, insere e revive em ordem
     create_client_consulta(1, "teste2")
-    sleep(1)    
+    sleep(2)    
     create_client_derruba(2, 2)
-    sleep(1)
+    sleep(11)
     create_client_insere(0, "teste2", "abc")
-    sleep(1)
+    sleep(2)
     create_server_revive(2, 2)
-    sleep(1)
+    sleep(5)
 
     # termina
     create_client_derruba_todos(2)
