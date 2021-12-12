@@ -1,6 +1,7 @@
 extern crate paho_mqtt as mqtt;
 extern crate serde_json as json;
 
+#[allow(dead_code)]
 mod api;
 
 use std::{

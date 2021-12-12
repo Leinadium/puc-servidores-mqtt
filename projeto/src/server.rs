@@ -18,6 +18,7 @@ use api::{
     ServidorAtualizacao, ServidorNascimento, ControleAssassinato,
     Operacao, Conexao,
 };
+#[allow(dead_code)]
 mod api;
 
 

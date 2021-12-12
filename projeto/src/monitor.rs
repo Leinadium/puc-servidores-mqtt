@@ -14,6 +14,7 @@ use api::{
 };
 use std::thread::sleep;
 
+#[allow(dead_code)]
 mod api;
 
 
