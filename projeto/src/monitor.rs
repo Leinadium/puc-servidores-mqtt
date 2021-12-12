@@ -7,45 +7,42 @@ use std::{
     thread,
     borrow::Borrow,
     collections::HashMap,
-    time::{Duration, SystemTime}
+    time::{Duration}
 };
-use std::alloc::System;
-
-use json::{Value};
-use mqtt::Message;
-
 use api::{
-    MonitorMorte,
-    Operacao,
     Conexao
 };
 use std::thread::sleep;
 
 mod api;
 
+
 fn check_heartbeat(conexao: &Conexao, hashmap: &mut HashMap<i64, Duration>, now: Duration) {
     // verifica se há mensagens de heartbeat sem bloquear, para atualizar o hashmap
-    if let msg = conexao.rx.try_recv() {
-        let mut id_serv: i64;
+    let msg = conexao.rx.try_recv();
 
-        // converte a msg para json
-        if let Some(msg) = msg {
-            let texto = msg.payload_str().borrow();
-            if let Some(v) = json::from_str(texto) {
-                // verifica se a msg está corretamente estruturada (com idServ)
-                if v.contains_key("idServ") {
-                    // insere/atualiza o "último momento visto" do server no hashmap
-                    id_serv = api::extrair_int(&v, "idServ");
-                    hashmap.insert(id_serv, now);
-                }
+    let message = match msg {
+        Ok(t) => t,
+        Err(_error) => return
+    };
+
+    // converte a msg para json
+    if let Some(message) = message {
+        let cow = message.payload_str();
+        let texto = cow.borrow();
+        if let Ok(v) = json::from_str(texto) {
+            // insere/atualiza o "último momento visto" do server no hashmap
+            let id_serv = api::extrair_int(&v, "idServ");
+            if id_serv != -1 {
+                hashmap.insert(id_serv, now);
             }
         }
     }
 }
 
-fn verify_crashed_servers(hashmap: &mut HashMap<i64, Duration>, now: Duration) {
+fn verify_crashed_servers(hashmap: &mut HashMap<i64, Duration>, nome_id: &String, now: Duration) {
     // verifica falhas no heartbeat e envia mensagem para o tópico reqs caso haja
-    for (id_serv, &vistoem) in hashmap.iter() {
+    for (id_serv, &vistoem) in hashmap.clone().iter() {
         // verifica se ultrapassou o tempo de timeout
         if now - vistoem > api::HEARTBEAT_TIMEOUT {
             // setup para enviar a msg
@@ -78,7 +75,7 @@ fn monitor_loop() {
     loop {
         let now = api::get_now_as_duration();
         check_heartbeat(&conexao, &mut hashmap, now);
-        verify_crashed_servers(&mut hashmap, now);
+        verify_crashed_servers(&mut hashmap, &nome_id, now);
         sleep(Duration::from_millis(1));
     }
 }
