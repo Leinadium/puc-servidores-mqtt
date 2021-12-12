@@ -14,9 +14,9 @@ use std::{
 use json::{Value};
 
 use api::{
-    ClientInsercao, ClientLeitura, MonitorMorte, ServidorAtualizacao, ServidorNascimento,
-    Operacao,
-    Conexao
+    ClientInsercao, ClientLeitura, MonitorMorte,
+    ServidorAtualizacao, ServidorNascimento, ControleAssassinato,
+    Operacao, Conexao,
 };
 mod api;
 
@@ -129,6 +129,9 @@ fn parse(v: Value) -> Operacao {
             hashmap: api::extrair_hashmap(&v, "conteudo"),
             tempo: api::get_now_as_duration(),
         }),
+        "assassinato" => Operacao::Assassinato(ControleAssassinato {
+            idserv: api::extrair_int(&v, "idserv"),
+        }),
         _ => Operacao::Invalida
     }
 }
@@ -173,7 +176,7 @@ fn manda_atualizacao(conexao: &Conexao, h: &HashMap<String, String>, topico: &st
 
 /// Envia as mensagens de leitura no lugar do morto
 fn responde_pelo_morto(conexao: &Conexao, log: &Vec<Operacao>, hashmap: &HashMap<String, String>,
-                       vistoem: &Duration, n_server_morto: &i64, n_total: &i64) {
+                       vistoem: &Duration, n_server_morto: &i64, n_total: &i64, n_server: &i64) {
 
     for op in log.iter() {
         match op {
@@ -183,8 +186,10 @@ fn responde_pelo_morto(conexao: &Conexao, log: &Vec<Operacao>, hashmap: &HashMap
                         None => {"nao existe".to_string()}
                         Some(c) => {c.clone()}
                     };
-                    println!("  enviando msg pelo morto: {}", content);
-                    api::enviar(&conexao, &content, &cl.topicoresp.as_str())
+                    let payload = format!(r#"{{ "idserv": {}, "resposta": "{}" }}"#,
+                        n_server, content);
+                    println!("  enviando msg pelo morto: {}", payload);
+                    api::enviar(&conexao, &payload, &cl.topicoresp.as_str())
                 }
             },
             _ => {}
@@ -254,8 +259,10 @@ fn main_loop(n_server: &i64, n_total: &i64, has_birth: bool) {
                         None => {"nao existe".to_string()}
                         Some(c) => {c.clone()}
                     };
-                    println!("  enviando resposta: {}", content);
-                    api::enviar(&conexao, &content, &cl.topicoresp.as_str());
+                    let payload = format!(r#"{{ "idserv": {}, "resposta": "{}" }}"#,
+                                          n_server, content);
+                    println!("  enviando resposta: {}", payload);
+                    api::enviar(&conexao, &payload, &cl.topicoresp.as_str());
                 }
             },
             // TRATANDO UM SERVIDOR MORRENDO
@@ -263,10 +270,11 @@ fn main_loop(n_server: &i64, n_total: &i64, has_birth: bool) {
                 println!("  tipo: morte");
                 if sou_sub(&n_server, &n_total, &mm.idserv) {
                     println!("  sou o responsavel pelo defunto");
-                    responde_pelo_morto(&conexao, &lista_log, &hashmap, &mm.vistoem, &mm.idserv, &n_total);
+                    responde_pelo_morto(&conexao, &lista_log, &hashmap, &mm.vistoem, &mm.idserv, &n_total, &n_server);
                     bool_sub = true;
                 }
             },
+            // TRATANDO UM SERVIDOR NASCENDO
             Operacao::Nascimento(sn) => {
                 println!("  tipo: nascimento");
                 if bool_sub && sou_sub(&n_server, &n_total, &sn.idserv) {
@@ -275,11 +283,21 @@ fn main_loop(n_server: &i64, n_total: &i64, has_birth: bool) {
                     bool_sub = false;
                 }
             },
+            // TRATANDO A MINHA ATUALIZACAO
             Operacao::Atualizacao(sa) => {
                 println!("  tipo: atualizacao");
                 api::remover_topico(&conexao, &topico_recuperacao);
                 println!("  pegando conteudo que perdi enquanto estava morto");
                 se_atualiza(&sa.hashmap, &mut hashmap);
+            },
+            // (PARA CONTROLE) TRATANDO A MINHA MORTE
+            Operacao::Assassinato(ca) => {
+                println!("  tipo: assassinato");
+                if ca.idserv == *n_server {
+                    println!("  chegou a minha hora. Fechando");
+                    conexao.cli.disconnect(None).expect("error disconnecting");
+                    process::exit(0);
+                }
             }
 
             _ => { devo_salvar = false; }     // operacao invalida
@@ -319,7 +337,7 @@ fn main() {
     };
 
 
-    println!("starting server #{}/{}", n_server, n_total);
+    println!("starting server #{} (server {}/{})", n_server, n_server + 1, n_total);
 
     // iniciando o heartbeat
     let n_server1 = n_server.clone();

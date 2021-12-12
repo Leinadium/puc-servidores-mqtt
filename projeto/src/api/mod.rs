@@ -20,7 +20,7 @@ const END_BROKER:&str = "tcp://localhost:1883";
 pub const TOPICO_REQS:&str = "inf1406-reqs";
 pub const TOPICO_MON:&str = "inf1406-mon";
 pub const TOPICO_REC:&str = "inf1406-rec-";
-pub const TOPICO_NONE:&str = "none";
+pub const TOPICO_NONE:&str = "inf1406-none";
 
 pub const SERVER_NAME:&str = "inf1406-server-";
 pub const SERVER_HEARTBEAT_NAME: &str = "inf1406-server-h-";
@@ -69,12 +69,17 @@ pub struct ServidorAtualizacao {
     pub tempo: Duration
 }
 
+pub struct ControleAssassinato {
+    pub idserv: i64
+}
+
 pub enum Operacao {
     Leitura(ClientLeitura),
     Insercao(ClientInsercao),
     Morte(MonitorMorte),
     Nascimento(ServidorNascimento),
     Atualizacao(ServidorAtualizacao),
+    Assassinato(ControleAssassinato),
     Invalida,
 }
 
@@ -97,6 +102,7 @@ pub fn conectar(nome_id: &String, topico: &str) -> Conexao {
     let create_opts = mqtt::CreateOptionsBuilder::new()
         .server_uri(END_BROKER)
         .client_id(nome_id)
+        .persistence(None)
         .finalize();
 
     // cria o client de conexao

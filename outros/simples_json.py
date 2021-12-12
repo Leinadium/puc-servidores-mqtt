@@ -39,6 +39,11 @@ mensagens = {
         "tipomsg": "falhaserv",
         "idserv": 0,
         "vistoem": "0.0"
+    }),
+
+    "a": dumps({
+        "tipomsg": "assassinato",
+        "idserv": 1,
     })
 }
 

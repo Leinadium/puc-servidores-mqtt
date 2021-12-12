@@ -49,3 +49,12 @@
   }
 }
 ```
+
+## Controle para derrubar servidor
+Serve para derrubar algum servidor específico.
+```json
+{
+  "tipomsg": "assassinato",
+  "idserv": 1234
+}
+```
