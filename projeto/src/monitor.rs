@@ -57,7 +57,7 @@ fn verify_crashed_servers(hashmap: &mut HashMap<i64, Duration>, conexao: &Conexa
             // setup para enviar a msg
             let fail_hb_topico = api::TOPICO_REQS;
             // let fail_hb_conexao = api::conectar(&nome_id, fail_hb_topico);
-            let fail_hb_text = format!(r#"{{"tipomsg": "falhaserv", "idserv": {}, "vistoem": {}}}"#, id_serv, vistoem.as_millis() as u64);
+            let fail_hb_text = format!(r#"{{"tipomsg": "falhaserv", "idserv": {}, "vistoem": "{}"}}"#, id_serv, vistoem.as_millis() as u64);
 
             api::enviar(&conexao, &fail_hb_text, fail_hb_topico);
             hashmap.remove(id_serv);

@@ -25,7 +25,7 @@
 {
   "tipomsg": "falhaserv",
   "idserv": 1234,
-  "vistoem": "12345.78"
+  "vistoem": "1234578"
 }
 ```
 
