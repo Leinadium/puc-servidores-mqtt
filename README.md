@@ -127,3 +127,12 @@ Casos de Teste de Funcionamento com Falhas:
 ```
 
 Para executar, execute o script de testes ```projeto/tests.py```
+
+
+# Observações
+
+Há alguns outros documentos na pasta ```docs``` para consulta.
+
+A pasta ```exemplo``` contém um exemplo para conexão usando a biblioteca ```paho-mqtt``` para Rust.
+
+A pasta ```outros``` contém um script python simples para enviar mensagens mqtt. Foi usado para testes rápidos.
